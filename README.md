@@ -258,5 +258,3 @@ curl -I 'http://10.0.0.1:8088/cgi-bin/xiaomi-dnsmasq-gui_api?action=auth_status'
 - `curl -I` 验证结果
 
 ---
-
-**仓库文档统一入口：`README.md`**
