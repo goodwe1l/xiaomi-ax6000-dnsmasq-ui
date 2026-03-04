@@ -1,0 +1,93 @@
+name: Xiaomi Router Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 发布标签（例如 v1.0.0）
+        required: true
+        type: string
+      release_name:
+        description: Release 标题（留空则使用标签）
+        required: false
+        type: string
+      create_release:
+        description: 是否创建 GitHub Release
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Test
+        run: go test ./cmd/dhcp_adv_api/...
+
+      - name: Build Xiaomi Router Binary
+        run: |
+          set -euo pipefail
+          mkdir -p dist/package
+          GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags "-s -w" -o dist/package/dhcp_adv_api ./cmd/dhcp_adv_api
+          cp scripts/deploy_oneclick.sh dist/package/
+          cp scripts/dhcp_adv_start.sh dist/package/
+          cp scripts/dhcp_adv_ensure.sh dist/package/
+          cp scripts/api_regression.sh dist/package/
+          cp README.md dist/package/
+          chmod +x dist/package/dhcp_adv_api dist/package/deploy_oneclick.sh dist/package/dhcp_adv_start.sh dist/package/dhcp_adv_ensure.sh dist/package/api_regression.sh
+
+      - name: Package Artifact
+        id: package
+        run: |
+          set -euo pipefail
+          TAG="${{ inputs.tag }}"
+          ARCHIVE="dhcp_adv_${TAG}_xiaomi_arm64.tar.gz"
+          tar -C dist/package -czf "dist/${ARCHIVE}" .
+          sha256sum "dist/${ARCHIVE}" > "dist/${ARCHIVE}.sha256"
+          echo "archive=dist/${ARCHIVE}" >> "$GITHUB_OUTPUT"
+          echo "checksum=dist/${ARCHIVE}.sha256" >> "$GITHUB_OUTPUT"
+
+      - name: Ensure Tag Exists
+        run: |
+          set -euo pipefail
+          TAG="${{ inputs.tag }}"
+          if git ls-remote --tags origin "refs/tags/${TAG}" | grep -q "refs/tags/${TAG}$"; then
+            echo "Tag ${TAG} 已存在，跳过创建"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git tag "${TAG}" "${GITHUB_SHA}"
+            git push origin "refs/tags/${TAG}"
+          fi
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dhcp-adv-xiaomi-arm64
+          path: |
+            ${{ steps.package.outputs.archive }}
+            ${{ steps.package.outputs.checksum }}
+
+      - name: Create GitHub Release
+        if: ${{ inputs.create_release }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag }}
+          name: ${{ inputs.release_name || inputs.tag }}
+          generate_release_notes: true
+          files: |
+            ${{ steps.package.outputs.archive }}
+            ${{ steps.package.outputs.checksum }}
