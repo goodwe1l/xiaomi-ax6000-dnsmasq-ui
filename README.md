@@ -78,20 +78,20 @@ ROUTER_PASS='你的SSH密码' ./scripts/deploy_oneclick.sh --host 10.0.0.1
 
 第一步：从 GitHub Release 下载以下两个文件：
 
-- `dhcp_adv_<tag>_xiaomi_arm64.tar.gz`
-- `dhcp_adv_<tag>_xiaomi_arm64.tar.gz.sha256`
+- `xiaomi-dnsmasq-gui_<tag>_arm64.tar.gz`
+- `xiaomi-dnsmasq-gui_<tag>_arm64.tar.gz.sha256`
 
 第二步：校验完整性（推荐）：
 
 ```sh
-sha256sum -c dhcp_adv_<tag>_xiaomi_arm64.tar.gz.sha256
+sha256sum -c xiaomi-dnsmasq-gui_<tag>_arm64.tar.gz.sha256
 ```
 
 第三步：解压：
 
 ```sh
 mkdir -p /tmp/dhcp_adv_release
-tar -xzf dhcp_adv_<tag>_xiaomi_arm64.tar.gz -C /tmp/dhcp_adv_release
+tar -xzf xiaomi-dnsmasq-gui_<tag>_arm64.tar.gz -C /tmp/dhcp_adv_release
 cd /tmp/dhcp_adv_release
 ls -1
 ```
@@ -100,6 +100,7 @@ Release 包内容不只有一个二进制，默认包含：
 
 - `dhcp_adv_api`
 - `deploy_oneclick.sh`
+- `uninstall_oneclick.sh`
 - `dhcp_adv_start.sh`
 - `dhcp_adv_ensure.sh`
 - `api_regression.sh`
@@ -136,7 +137,45 @@ sshpass -p '你的SSH密码' scp -O -o StrictHostKeyChecking=no -o UserKnownHost
 sshpass -p '你的SSH密码' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@10.0.0.1 "chmod +x /data/dhcp_adv/dhcp_adv_api /data/dhcp_adv/start.sh /data/dhcp_adv/ensure.sh && APP_DIR=/data/dhcp_adv DHCP_ADV_LISTEN_ADDR=10.0.0.1:8088 /data/dhcp_adv/start.sh"
 ```
 
-## 5. 运行配置
+## 5. 一键卸载
+
+### 5.1 本地远程卸载（推荐）
+
+适用场景：在你的电脑上执行，通过 SSH 卸载路由器中的服务。
+
+源码仓库执行：
+
+```sh
+./scripts/uninstall_oneclick.sh --host 10.0.0.1
+```
+
+Release 解压目录执行：
+
+```sh
+./uninstall_oneclick.sh --host 10.0.0.1
+```
+
+说明：
+
+- 脚本会交互询问 SSH 端口、账号、密码（也支持参数传入）
+- 会执行停止进程、清理 cron 保活、删除安装目录（默认 `/data/dhcp_adv`）
+- 默认会二次确认，追加 `--yes` 可跳过确认
+
+### 5.2 路由器本机在线卸载
+
+适用场景：已登录路由器终端，直接执行在线脚本完成卸载。
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/goodwe1l/xiaomi-ax6000-dnsmasq-ui/refs/heads/main/scripts/uninstall_oneclick.sh | sh -s -- local --yes
+```
+
+可选指定目录：
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/goodwe1l/xiaomi-ax6000-dnsmasq-ui/refs/heads/main/scripts/uninstall_oneclick.sh | sh -s -- local --remote-dir /data/dhcp_adv --yes
+```
+
+## 6. 运行配置
 
 支持环境变量：
 
@@ -151,7 +190,7 @@ sshpass -p '你的SSH密码' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFi
 password=你的管理页密码
 ```
 
-## 6. 访问与验收
+## 7. 访问与验收
 
 - 页面：`http://<路由器IP>:8088/`
 - API：`http://<路由器IP>:8088/cgi-bin/dhcp_adv_api?action=auth_status`
@@ -163,7 +202,7 @@ curl -I http://10.0.0.1:8088/
 curl -I 'http://10.0.0.1:8088/cgi-bin/dhcp_adv_api?action=auth_status'
 ```
 
-## 7. 目录结构
+## 8. 目录结构
 
 ```text
 .
@@ -175,6 +214,6 @@ curl -I 'http://10.0.0.1:8088/cgi-bin/dhcp_adv_api?action=auth_status'
 └── README.md
 ```
 
-## 8. 文档约定
+## 9. 文档约定
 
 仓库仅保留 `README.md` 作为统一文档入口。

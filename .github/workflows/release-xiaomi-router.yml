@@ -43,18 +43,19 @@ jobs:
           mkdir -p dist/package
           GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags "-s -w" -o dist/package/dhcp_adv_api ./cmd/dhcp_adv_api
           cp scripts/deploy_oneclick.sh dist/package/
+          cp scripts/uninstall_oneclick.sh dist/package/
           cp scripts/dhcp_adv_start.sh dist/package/
           cp scripts/dhcp_adv_ensure.sh dist/package/
           cp scripts/api_regression.sh dist/package/
           cp README.md dist/package/
-          chmod +x dist/package/dhcp_adv_api dist/package/deploy_oneclick.sh dist/package/dhcp_adv_start.sh dist/package/dhcp_adv_ensure.sh dist/package/api_regression.sh
+          chmod +x dist/package/dhcp_adv_api dist/package/deploy_oneclick.sh dist/package/uninstall_oneclick.sh dist/package/dhcp_adv_start.sh dist/package/dhcp_adv_ensure.sh dist/package/api_regression.sh
 
       - name: Package Artifact
         id: package
         run: |
           set -euo pipefail
           TAG="${{ inputs.tag }}"
-          ARCHIVE="dhcp_adv_${TAG}_xiaomi_arm64.tar.gz"
+          ARCHIVE="xiaomi-dnsmasq-gui_${TAG}_arm64.tar.gz"
           tar -C dist/package -czf "dist/${ARCHIVE}" .
           sha256sum "dist/${ARCHIVE}" > "dist/${ARCHIVE}.sha256"
           echo "archive=dist/${ARCHIVE}" >> "$GITHUB_OUTPUT"
@@ -76,7 +77,7 @@ jobs:
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: dhcp-adv-xiaomi-arm64
+          name: xiaomi-dnsmasq-gui-arm64
           path: |
             ${{ steps.package.outputs.archive }}
             ${{ steps.package.outputs.checksum }}
@@ -86,7 +87,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ inputs.tag }}
-          name: ${{ inputs.release_name || inputs.tag }}
+          name: ${{ inputs.release_name || format('xiaomi-dnsmasq-gui {0}', inputs.tag) }}
           generate_release_notes: true
           files: |
             ${{ steps.package.outputs.archive }}

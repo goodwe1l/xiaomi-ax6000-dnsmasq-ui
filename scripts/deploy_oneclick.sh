@@ -427,7 +427,7 @@ install_mode() {
   setup_install_inputs
 
   RELEASE_REAL_TAG=$(resolve_release_tag)
-  ARCHIVE_NAME="dhcp_adv_${RELEASE_REAL_TAG}_xiaomi_arm64.tar.gz"
+  ARCHIVE_NAME="xiaomi-dnsmasq-gui_${RELEASE_REAL_TAG}_arm64.tar.gz"
   DOWNLOAD_URL="https://github.com/$GITHUB_REPO/releases/download/$RELEASE_REAL_TAG/$ARCHIVE_NAME"
 
   TMP_DIR=$(mktemp -d)
