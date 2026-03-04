@@ -46,7 +46,7 @@ LOCAL_BIN_ARG="${LOCAL_BIN:-}"
 GITHUB_REPO="${GITHUB_REPO:-goodwe1l/xiaomi-ax6000-dnsmasq-ui}"
 RELEASE_TAG="${RELEASE_TAG:-latest}"
 
-ENABLE_CRON=0
+ENABLE_CRON="${ENABLE_CRON:-1}"
 SKIP_VERIFY=0
 CONFIRM="${CONFIRM:-}"
 
@@ -157,7 +157,8 @@ usage() {
   --http-port <PORT>             面板端口（外部访问端口），默认 8088
   --listen-addr <ADDR>           服务监听地址，默认 路由IP:面板端口
   --dashboard-password <PASS>    面板登录密码（写入 auth.conf）
-  --enable-cron                  启用 cron 保活
+  --enable-cron                  启用 cron 保活（默认已启用）
+  --disable-cron                 禁用 cron 保活
   --skip-verify                  跳过部署后的 HTTP 验证
   --yes                          跳过卸载确认（仅 uninstall/uninstall-local）
 
@@ -274,6 +275,10 @@ parse_args() {
         ;;
       --enable-cron)
         ENABLE_CRON=1
+        shift
+        ;;
+      --disable-cron)
+        ENABLE_CRON=0
         shift
         ;;
       --skip-verify)
@@ -463,7 +468,7 @@ deploy_mode() {
       grep -qF '$REMOTE_DIR/start.sh' \"\$crontab_file\" || echo '@reboot APP_DIR=$REMOTE_DIR XIAOMI_DNSMASQ_GUI_LISTEN_ADDR=$LISTEN_ADDR $REMOTE_DIR/start.sh' >> \"\$crontab_file\"; \
       /etc/init.d/cron restart >/dev/null 2>&1 || true"
   else
-    log "6/7 跳过 cron 写入（如需可加 --enable-cron）"
+    log "6/7 跳过 cron 写入（已指定 --disable-cron）"
   fi
 
   if [ "$SKIP_VERIFY" -eq 1 ]; then
@@ -536,6 +541,8 @@ install_mode() {
   if [ "$ENABLE_CRON" -eq 1 ]; then
     log "附加：写入 cron 保活"
     apply_cron_local
+  else
+    log "附加：跳过 cron 写入（已指定 --disable-cron）"
   fi
 
   if [ "$SKIP_VERIFY" -eq 1 ]; then

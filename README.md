@@ -141,6 +141,7 @@ curl -fsSL https://raw.githubusercontent.com/goodwe1l/xiaomi-ax6000-dnsmasq-ui/r
 - 自动下载对应 release 包并安装
 - 交互询问路由器 LAN IP、面板端口、面板密码
 - 默认监听 `路由器IP:面板端口`
+- 默认启用 cron 保活（需关闭时可加 `--disable-cron`）
 
 ### 3) 可选参数示例
 
@@ -152,8 +153,7 @@ curl -fsSL https://raw.githubusercontent.com/goodwe1l/xiaomi-ax6000-dnsmasq-ui/r
   --remote-dir /data/xiaomi-dnsmasq-gui \
   --http-port 8088 \
   --listen-addr 10.0.0.1:8088 \
-  --dashboard-password '你的管理页密码' \
-  --enable-cron
+  --dashboard-password '你的管理页密码'
 ```
 
 ---
