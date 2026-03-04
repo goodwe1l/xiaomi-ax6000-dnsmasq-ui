@@ -50,6 +50,7 @@
 
 - 本机有 `go`、`sshpass`、`ssh`、`scp`、`curl`
 - 可通过 SSH 访问路由器（默认 `root@10.0.0.1`）
+- 脚本为交互式，会依次询问：路由器 IP、SSH 端口/账号/密码、面板端口、面板密码
 
 执行命令：
 
@@ -66,7 +67,7 @@ ROUTER_PASS='你的SSH密码' ./scripts/deploy_oneclick.sh --host 10.0.0.1
   --port 22 \
   --remote-dir /data/dhcp_adv \
   --http-port 8088 \
-  --listen-addr 0.0.0.0:8088 \
+  --listen-addr 10.0.0.1:8088 \
   --dashboard-password '你的管理页密码' \
   --enable-cron
 ```
@@ -110,20 +111,36 @@ Release 包内容不只有一个二进制，默认包含：
 ROUTER_PASS='你的SSH密码' ./deploy_oneclick.sh --host 10.0.0.1
 ```
 
+该脚本在 release 包中会自动优先使用同目录 `dhcp_adv_api`，无需本地 Go 编译环境。
+
+### 4.3 路由器在线一键安装（无需本地下载包）
+
+如果你已经登录到路由器（`root`），可以直接在线安装：
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/goodwe1l/xiaomi-ax6000-dnsmasq-ui/refs/heads/main/scripts/deploy_oneclick.sh | sh -s -- install
+```
+
+说明：
+
+- 这是“路由器本机安装”模式，会在线下载 GitHub Release 包并自动部署
+- 运行时会交互询问路由器 LAN IP、面板端口、面板密码
+- 默认监听地址是 `路由器IP:面板端口`（不是 `0.0.0.0`）
+
 第五步（可选）：完全手工部署：
 
 ```sh
 sshpass -p '你的SSH密码' scp -O -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null dhcp_adv_api root@10.0.0.1:/data/dhcp_adv/dhcp_adv_api
 sshpass -p '你的SSH密码' scp -O -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null dhcp_adv_start.sh root@10.0.0.1:/data/dhcp_adv/start.sh
 sshpass -p '你的SSH密码' scp -O -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null dhcp_adv_ensure.sh root@10.0.0.1:/data/dhcp_adv/ensure.sh
-sshpass -p '你的SSH密码' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@10.0.0.1 "chmod +x /data/dhcp_adv/dhcp_adv_api /data/dhcp_adv/start.sh /data/dhcp_adv/ensure.sh && APP_DIR=/data/dhcp_adv DHCP_ADV_LISTEN_ADDR=0.0.0.0:8088 /data/dhcp_adv/start.sh"
+sshpass -p '你的SSH密码' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@10.0.0.1 "chmod +x /data/dhcp_adv/dhcp_adv_api /data/dhcp_adv/start.sh /data/dhcp_adv/ensure.sh && APP_DIR=/data/dhcp_adv DHCP_ADV_LISTEN_ADDR=10.0.0.1:8088 /data/dhcp_adv/start.sh"
 ```
 
 ## 5. 运行配置
 
 支持环境变量：
 
-- `DHCP_ADV_LISTEN_ADDR`：监听地址，默认 `0.0.0.0:8088`
+- `DHCP_ADV_LISTEN_ADDR`：监听地址，程序默认 `0.0.0.0:8088`，脚本默认会写成 `路由器IP:面板端口`
 - `DHCP_ADV_AUTH_FILE`：密码文件，默认 `/data/dhcp_adv/auth.conf`
 - `DHCP_ADV_SESSION_FILE`：会话文件，默认 `/tmp/dhcp_adv_session`
 - `DHCP_ADV_API_PATH`：API 路径，默认 `/cgi-bin/dhcp_adv_api`
