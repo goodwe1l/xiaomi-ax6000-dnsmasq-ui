@@ -1,0 +1,7 @@
+- 已将 DHCP 管理页从单 CGI 页面改为“静态前端 + JSON CGI API”两层结构。
+- 新后端入口：cgi-bin/dhcp_adv_api.sh（action: get_state/toggle_dhcp/save_default/lease_upsert/lease_delete/template_upsert/template_delete）。
+- 前端入口：web/index.html，资源在 web/assets（css/js/icons/vendor），交互全部使用 fetch 异步，不整页刷新。
+- UI 交互约束：静态租约与标签模板均支持行内编辑；新增通过右侧抽屉完成；动态租约支持“转为静态”并预填。
+- 启动脚本 dhcp_adv_start.sh 现在会同步 web 目录和 cgi-bin/dhcp_adv_api.sh 到 /data/dhcp_adv/www，并清理旧 dhcp_adv*.sh CGI。
+- 旧页面 CGI dhcp_adv.sh 已移除，旧 URL /cgi-bin/dhcp_adv.sh 不再保留兼容。
+- 本项目不引入 Node 构建链，保持静态文件直出，适配 OpenWrt 18.06。

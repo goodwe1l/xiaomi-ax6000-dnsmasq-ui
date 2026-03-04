@@ -1,0 +1,5 @@
+- 新增一键部署脚本 deploy_oneclick.sh：支持 host/user/port/password/remote-dir/http-port 参数，支持 --enable-cron、--skip-verify。
+- 脚本依赖 sshpass+scp -O（兼容无 sftp-server 的 OpenWrt），流程为：建目录→上传 web+cgi-bin→上传 start/ensure→赋权重启→HTTP 验证。
+- 脚本在线验证检查三项：/ 返回 200，/cgi-bin/dhcp_adv_api.sh?action=get_state 返回 200，旧 /cgi-bin/dhcp_adv.sh 返回 404。
+- 新增文档 httpd配置与一键部署说明.md，解释 uhttpd 参数、手工部署步骤、脚本用法与常见问题。
+- 修复脚本日志变量展开问题：旧 URL 状态日志改为 ${OLD_CODE}，避免 set -u 下的变量解析异常。

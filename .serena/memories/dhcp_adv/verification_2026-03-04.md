@@ -1,0 +1,3 @@
+- 验证阶段发现在线设备 10.0.0.1:8088 仍返回旧入口页面（meta refresh 到 /cgi-bin/dhcp_adv.sh），说明新改造尚未部署到路由器。
+- 本地接口冒烟使用 mock uci 完成：GET get_state 返回完整 JSON；错误路径 BAD_METHOD 和 VALIDATION_ERROR 返回结构正确。
+- 修复了 cgi-bin/dhcp_adv_api.sh 的 json_escape 可移植性问题：去掉 BSD sed 不兼容的标签写法，改为 tr+sed 方案。
