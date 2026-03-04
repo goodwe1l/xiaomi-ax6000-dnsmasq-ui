@@ -5,7 +5,15 @@
 ![Go](https://img.shields.io/badge/Go-1.22-00ADD8?logo=go)
 ![OpenWrt](https://img.shields.io/badge/OpenWrt-arm64-66CC33)
 ![Release](https://img.shields.io/badge/Release-xiaomi--dnsmasq--gui-blue)
-![Deploy](https://img.shields.io/badge/Deploy-OneClick%20%2F%20Manual-005FA6)
+![Deploy](https://img.shields.io/badge/Deploy-Script%20%2F%20Manual-005FA6)
+
+**🔥 项目热度**
+
+[![GitHub Stars](https://img.shields.io/github/stars/goodwe1l/xiaomi-ax6000-dnsmasq-ui?style=flat-square)](https://github.com/goodwe1l/xiaomi-ax6000-dnsmasq-ui/stargazers)
+[![GitHub Forks](https://img.shields.io/github/forks/goodwe1l/xiaomi-ax6000-dnsmasq-ui?style=flat-square)](https://github.com/goodwe1l/xiaomi-ax6000-dnsmasq-ui/network/members)
+[![GitHub Issues](https://img.shields.io/github/issues/goodwe1l/xiaomi-ax6000-dnsmasq-ui?style=flat-square)](https://github.com/goodwe1l/xiaomi-ax6000-dnsmasq-ui/issues)
+[![GitHub Downloads](https://img.shields.io/github/downloads/goodwe1l/xiaomi-ax6000-dnsmasq-ui/total?style=flat-square)](https://github.com/goodwe1l/xiaomi-ax6000-dnsmasq-ui/releases)
+[![Last Commit](https://img.shields.io/github/last-commit/goodwe1l/xiaomi-ax6000-dnsmasq-ui?style=flat-square)](https://github.com/goodwe1l/xiaomi-ax6000-dnsmasq-ui/commits/main)
 
 [快速开始](#-快速开始) • [核心能力](#-核心能力) • [安装与部署](#-安装与部署) • [一键卸载](#-一键卸载) • [运行配置](#-运行配置) • [访问与验收](#-访问与验收)
 
@@ -14,6 +22,7 @@
 ## 📝 项目说明
 
 > [!IMPORTANT]
+>
 > - 本项目会直接修改路由器 DHCP/UCI 配置，请在内网环境使用并做好备份。
 > - 本项目定位为家庭/小型办公网络管理面板，不提供云端托管能力。
 > - 当前版本不依赖 `uhttpd/cgi-bin` 托管页面，服务由 Go 程序独立监听。
@@ -43,7 +52,7 @@
 浏览器
   -> Go HTTP 服务（默认 :8088）
      -> 内嵌前端静态资源（embed）
-     -> API 路由（/cgi-bin/dhcp_adv_api）
+     -> API 路由（/cgi-bin/xiaomi-dnsmasq-gui_api）
         -> UCI 命令封装
         -> dnsmasq 重启与状态同步
 ```
@@ -64,7 +73,7 @@
 执行：
 
 ```sh
-ROUTER_PASS='你的SSH密码' ./scripts/deploy_oneclick.sh --host 10.0.0.1
+ROUTER_PASS='你的SSH密码' ./scripts/deploy.sh --host 10.0.0.1
 ```
 
 脚本为交互式，会询问：
@@ -96,36 +105,35 @@ sha256sum -c xiaomi-dnsmasq-gui_<tag>_arm64.tar.gz.sha256
 第三步：解压：
 
 ```sh
-mkdir -p /tmp/dhcp_adv_release
-tar -xzf xiaomi-dnsmasq-gui_<tag>_arm64.tar.gz -C /tmp/dhcp_adv_release
-cd /tmp/dhcp_adv_release
+mkdir -p /tmp/xiaomi-dnsmasq-gui_release
+tar -xzf xiaomi-dnsmasq-gui_<tag>_arm64.tar.gz -C /tmp/xiaomi-dnsmasq-gui_release
+cd /tmp/xiaomi-dnsmasq-gui_release
 ls -1
 ```
 
 默认包含：
 
-- `dhcp_adv_api`
-- `deploy_oneclick.sh`
-- `uninstall_oneclick.sh`
-- `dhcp_adv_start.sh`
-- `dhcp_adv_ensure.sh`
+- `xiaomi-dnsmasq-gui`
+- `deploy.sh`
+- `start.sh`
+- `ensure.sh`
 - `api_regression.sh`
 - `README.md`
 
 第四步：在解压目录直接部署：
 
 ```sh
-ROUTER_PASS='你的SSH密码' ./deploy_oneclick.sh --host 10.0.0.1
+ROUTER_PASS='你的SSH密码' ./deploy.sh --host 10.0.0.1
 ```
 
-该脚本会优先使用同目录 `dhcp_adv_api`，无需本地 Go 编译环境。
+该脚本会优先使用同目录 `xiaomi-dnsmasq-gui`，无需本地 Go 编译环境。
 
 ### 2) 路由器在线一键安装（curl | sh）
 
 适用：你已进入路由器 shell，希望就地在线安装。
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/goodwe1l/xiaomi-ax6000-dnsmasq-ui/refs/heads/main/scripts/deploy_oneclick.sh | sh -s -- install
+curl -fsSL https://raw.githubusercontent.com/goodwe1l/xiaomi-ax6000-dnsmasq-ui/refs/heads/main/scripts/deploy.sh | sh -s -- install
 ```
 
 说明：
@@ -137,11 +145,11 @@ curl -fsSL https://raw.githubusercontent.com/goodwe1l/xiaomi-ax6000-dnsmasq-ui/r
 ### 3) 可选参数示例
 
 ```sh
-./scripts/deploy_oneclick.sh \
+./scripts/deploy.sh \
   --host 10.0.0.1 \
   --user root \
   --port 22 \
-  --remote-dir /data/dhcp_adv \
+  --remote-dir /data/xiaomi-dnsmasq-gui \
   --http-port 8088 \
   --listen-addr 10.0.0.1:8088 \
   --dashboard-password '你的管理页密码' \
@@ -157,33 +165,33 @@ curl -fsSL https://raw.githubusercontent.com/goodwe1l/xiaomi-ax6000-dnsmasq-ui/r
 源码仓库执行：
 
 ```sh
-./scripts/uninstall_oneclick.sh --host 10.0.0.1
+./scripts/deploy.sh uninstall --host 10.0.0.1
 ```
 
 Release 解压目录执行：
 
 ```sh
-./uninstall_oneclick.sh --host 10.0.0.1
+./deploy.sh uninstall --host 10.0.0.1
 ```
 
 会执行：
 
 - 停止进程
 - 清理 cron 保活项
-- 删除安装目录（默认 `/data/dhcp_adv`）
+- 删除安装目录（默认 `/data/xiaomi-dnsmasq-gui`）
 
 默认会二次确认，追加 `--yes` 可跳过确认。
 
 ### 方式 B：路由器本机在线卸载
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/goodwe1l/xiaomi-ax6000-dnsmasq-ui/refs/heads/main/scripts/uninstall_oneclick.sh | sh -s -- local --yes
+curl -fsSL https://raw.githubusercontent.com/goodwe1l/xiaomi-ax6000-dnsmasq-ui/refs/heads/main/scripts/deploy.sh | sh -s -- uninstall-local --yes
 ```
 
 可选指定目录：
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/goodwe1l/xiaomi-ax6000-dnsmasq-ui/refs/heads/main/scripts/uninstall_oneclick.sh | sh -s -- local --remote-dir /data/dhcp_adv --yes
+curl -fsSL https://raw.githubusercontent.com/goodwe1l/xiaomi-ax6000-dnsmasq-ui/refs/heads/main/scripts/deploy.sh | sh -s -- uninstall-local --remote-dir /data/xiaomi-dnsmasq-gui --yes
 ```
 
 ---
@@ -192,10 +200,10 @@ curl -fsSL https://raw.githubusercontent.com/goodwe1l/xiaomi-ax6000-dnsmasq-ui/r
 
 支持环境变量：
 
-- `DHCP_ADV_LISTEN_ADDR`：监听地址，程序默认 `0.0.0.0:8088`
-- `DHCP_ADV_AUTH_FILE`：密码文件，默认 `/data/dhcp_adv/auth.conf`
-- `DHCP_ADV_SESSION_FILE`：会话文件，默认 `/tmp/dhcp_adv_session`
-- `DHCP_ADV_API_PATH`：API 路径，默认 `/cgi-bin/dhcp_adv_api`
+- `XIAOMI_DNSMASQ_GUI_LISTEN_ADDR`：监听地址，程序默认 `0.0.0.0:8088`
+- `XIAOMI_DNSMASQ_GUI_AUTH_FILE`：密码文件，默认 `/data/xiaomi-dnsmasq-gui/auth.conf`
+- `XIAOMI_DNSMASQ_GUI_SESSION_FILE`：会话文件，默认 `/tmp/xiaomi-dnsmasq-gui_session`
+- `XIAOMI_DNSMASQ_GUI_API_PATH`：API 路径，默认 `/cgi-bin/xiaomi-dnsmasq-gui_api`
 
 密码文件格式：
 
@@ -210,13 +218,13 @@ password=你的管理页密码
 访问地址：
 
 - 页面：`http://<路由器IP>:8088/`
-- API：`http://<路由器IP>:8088/cgi-bin/dhcp_adv_api?action=auth_status`
+- API：`http://<路由器IP>:8088/cgi-bin/xiaomi-dnsmasq-gui_api?action=auth_status`
 
 快速检查：
 
 ```sh
 curl -I http://10.0.0.1:8088/
-curl -I 'http://10.0.0.1:8088/cgi-bin/dhcp_adv_api?action=auth_status'
+curl -I 'http://10.0.0.1:8088/cgi-bin/xiaomi-dnsmasq-gui_api?action=auth_status'
 ```
 
 > [!TIP]
@@ -229,7 +237,8 @@ curl -I 'http://10.0.0.1:8088/cgi-bin/dhcp_adv_api?action=auth_status'
 
 ```text
 .
-├── cmd/dhcp_adv_api/              # Go 服务代码（含 web embed）
+├── cmd/api/                                 # Go 服务代码（含 web embed）
+├── pkg/uci/                                 # UCI 相关封装与解析
 ├── pkg/utils/                     # 公共辅助函数
 ├── scripts/                       # 部署/卸载/运维脚本
 ├── misc/                          # 回归测试脚本等辅助文件

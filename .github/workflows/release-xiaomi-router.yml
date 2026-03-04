@@ -35,20 +35,19 @@ jobs:
           go-version-file: go.mod
 
       - name: Test
-        run: go test ./cmd/dhcp_adv_api/...
+        run: go test ./cmd/api/...
 
       - name: Build Xiaomi Router Binary
         run: |
           set -euo pipefail
           mkdir -p dist/package
-          GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags "-s -w" -o dist/package/dhcp_adv_api ./cmd/dhcp_adv_api
-          cp scripts/deploy_oneclick.sh dist/package/
-          cp scripts/uninstall_oneclick.sh dist/package/
-          cp scripts/dhcp_adv_start.sh dist/package/
-          cp scripts/dhcp_adv_ensure.sh dist/package/
+          GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags "-s -w" -o dist/package/xiaomi-dnsmasq-gui ./cmd/api
+          cp scripts/deploy.sh dist/package/
+          cp scripts/start.sh dist/package/
+          cp scripts/ensure.sh dist/package/
           cp scripts/api_regression.sh dist/package/
           cp README.md dist/package/
-          chmod +x dist/package/dhcp_adv_api dist/package/deploy_oneclick.sh dist/package/uninstall_oneclick.sh dist/package/dhcp_adv_start.sh dist/package/dhcp_adv_ensure.sh dist/package/api_regression.sh
+          chmod +x dist/package/xiaomi-dnsmasq-gui dist/package/deploy.sh dist/package/start.sh dist/package/ensure.sh dist/package/api_regression.sh
 
       - name: Package Artifact
         id: package

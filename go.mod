@@ -1,3 +1,3 @@
-module dhcp_adv
+module xiaomi-dnsmasq-gui
 
 go 1.22

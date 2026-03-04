@@ -125,7 +125,7 @@ curl_post() {
   shift
   curl -sS -m "$TIMEOUT" -b "$COOKIE_FILE" -c "$COOKIE_FILE" \
     -X POST -o "$out" -w '%{http_code}' \
-    "$BASE_URL/cgi-bin/dhcp_adv_api" "$@"
+    "$BASE_URL/cgi-bin/xiaomi-dnsmasq-gui_api" "$@"
 }
 
 expect_http_200() {
@@ -157,12 +157,12 @@ code="$(curl_get '/' "$TMP_DIR/home.json")"
 expect_http_200 "$code" "首页访问"
 
 log "2/10 未登录读取 auth_status"
-code="$(curl_get '/cgi-bin/dhcp_adv_api?action=auth_status' "$TMP_DIR/auth_status.json")"
+code="$(curl_get '/cgi-bin/xiaomi-dnsmasq-gui_api?action=auth_status' "$TMP_DIR/auth_status.json")"
 expect_http_200 "$code" "auth_status"
 expect_contains "$TMP_DIR/auth_status.json" '"ok":true' "auth_status"
 
 log "3/10 未登录读取 get_state（应返回 UNAUTHORIZED）"
-code="$(curl_get '/cgi-bin/dhcp_adv_api?action=get_state' "$TMP_DIR/get_state_unauth.json")"
+code="$(curl_get '/cgi-bin/xiaomi-dnsmasq-gui_api?action=get_state' "$TMP_DIR/get_state_unauth.json")"
 expect_http_200 "$code" "未登录 get_state"
 expect_contains "$TMP_DIR/get_state_unauth.json" '"code":"UNAUTHORIZED"' "未登录 get_state"
 
@@ -182,7 +182,7 @@ code="$(curl_post "$TMP_DIR/template_upsert.json" \
 expect_http_200 "$code" "模板新增"
 expect_contains "$TMP_DIR/template_upsert.json" '"ok":true' "模板新增"
 
-code="$(curl_get_cookie '/cgi-bin/dhcp_adv_api?action=get_state' "$TMP_DIR/state_after_tpl_add.json")"
+code="$(curl_get_cookie '/cgi-bin/xiaomi-dnsmasq-gui_api?action=get_state' "$TMP_DIR/state_after_tpl_add.json")"
 expect_http_200 "$code" "读取状态（模板新增后）"
 TEMPLATE_SEC="$(extract_template_sec "$TMP_DIR/state_after_tpl_add.json")"
 [ -n "$TEMPLATE_SEC" ] || die "无法从 get_state 提取模板 section"
@@ -199,7 +199,7 @@ code="$(curl_post "$TMP_DIR/lease_upsert.json" \
 expect_http_200 "$code" "租约新增"
 expect_contains "$TMP_DIR/lease_upsert.json" '"ok":true' "租约新增"
 
-code="$(curl_get_cookie '/cgi-bin/dhcp_adv_api?action=get_state' "$TMP_DIR/state_after_lease_add.json")"
+code="$(curl_get_cookie '/cgi-bin/xiaomi-dnsmasq-gui_api?action=get_state' "$TMP_DIR/state_after_lease_add.json")"
 expect_http_200 "$code" "读取状态（租约新增后）"
 expect_contains "$TMP_DIR/state_after_lease_add.json" "$MAC" "租约新增后状态检查"
 
@@ -210,7 +210,7 @@ code="$(curl_post "$TMP_DIR/lease_delete.json" \
 expect_http_200 "$code" "租约删除"
 expect_contains "$TMP_DIR/lease_delete.json" '"ok":true' "租约删除"
 
-code="$(curl_get_cookie '/cgi-bin/dhcp_adv_api?action=get_state' "$TMP_DIR/state_after_lease_del.json")"
+code="$(curl_get_cookie '/cgi-bin/xiaomi-dnsmasq-gui_api?action=get_state' "$TMP_DIR/state_after_lease_del.json")"
 expect_http_200 "$code" "读取状态（租约删除后）"
 if grep -q "$MAC" "$TMP_DIR/state_after_lease_del.json"; then
   die "租约删除后仍然存在：$MAC"
@@ -229,16 +229,16 @@ expect_http_200 "$code" "登出"
 expect_contains "$TMP_DIR/logout.json" '"ok":true' "登出"
 
 rm -f "$COOKIE_FILE"
-code="$(curl_get '/cgi-bin/dhcp_adv_api?action=get_state' "$TMP_DIR/get_state_unauth_after_logout.json")"
+code="$(curl_get '/cgi-bin/xiaomi-dnsmasq-gui_api?action=get_state' "$TMP_DIR/get_state_unauth_after_logout.json")"
 expect_http_200 "$code" "登出后未登录 get_state"
 expect_contains "$TMP_DIR/get_state_unauth_after_logout.json" '"code":"UNAUTHORIZED"' "登出后未登录 get_state"
 
 log "10/10 校验旧 URL 下线"
 if [ "$CHECK_OLD_URL" -eq 1 ]; then
-  old_page_code="$(curl_get '/cgi-bin/dhcp_adv.sh' "$TMP_DIR/old_page.txt")"
+  old_page_code="$(curl_get '/cgi-bin/xiaomi-dnsmasq-gui.sh' "$TMP_DIR/old_page.txt")"
   [ "$old_page_code" = "404" ] || die "旧页面 URL 应为 404，实际：$old_page_code"
 
-  old_api_code="$(curl_get '/cgi-bin/dhcp_adv_api.sh?action=auth_status' "$TMP_DIR/old_api.txt")"
+  old_api_code="$(curl_get '/cgi-bin/xiaomi-dnsmasq-gui_api.sh?action=auth_status' "$TMP_DIR/old_api.txt")"
   [ "$old_api_code" = "404" ] || die "旧 API URL 应为 404，实际：$old_api_code"
 fi
 
