@@ -1,87 +1,93 @@
-# DHCP 高级管理服务
+# Xiaomi DNSMasq GUI
 
-> 面向小米 OpenWrt 的 DHCP 可视化配置系统（Go 单体服务 + 内嵌前端）
+> 🍥 面向小米 OpenWrt 的 DHCP 可视化管理服务（Go 单体服务 + 内嵌前端）
 
 ![Go](https://img.shields.io/badge/Go-1.22-00ADD8?logo=go)
 ![OpenWrt](https://img.shields.io/badge/OpenWrt-arm64-66CC33)
+![Release](https://img.shields.io/badge/Release-xiaomi--dnsmasq--gui-blue)
 ![Deploy](https://img.shields.io/badge/Deploy-OneClick%20%2F%20Manual-005FA6)
 
-## 1. 业务介绍
+[快速开始](#-快速开始) • [核心能力](#-核心能力) • [安装与部署](#-安装与部署) • [一键卸载](#-一键卸载) • [运行配置](#-运行配置) • [访问与验收](#-访问与验收)
 
-这个项目解决的是家庭/小型办公网络中 DHCP 配置复杂、易出错的问题。
+---
 
-传统方式通常依赖命令行逐条修改 UCI 配置，存在这些痛点：
+## 📝 项目说明
 
-- 静态租约、标签模板、默认网关与 DNS 规则分散，修改成本高
-- 误操作后很难快速回滚与定位
-- 新增设备、动态转静态场景需要重复录入
+> [!IMPORTANT]
+> - 本项目会直接修改路由器 DHCP/UCI 配置，请在内网环境使用并做好备份。
+> - 本项目定位为家庭/小型办公网络管理面板，不提供云端托管能力。
+> - 当前版本不依赖 `uhttpd/cgi-bin` 托管页面，服务由 Go 程序独立监听。
 
-本项目提供统一的 Web 管理入口，把 DHCP 常用运维动作收敛为可视化操作，后端保持与 OpenWrt UCI 逻辑一致。
+你可以把它理解成一个“面向路由器运维的 DHCP 控制台”：
 
-## 2. 核心能力
+- 把静态租约、标签模板、默认网关/DNS 规则统一到一个 Web 页面
+- 用异步交互替代传统命令行反复修改 UCI
+- 保持后端行为与 OpenWrt 原生 `dnsmasq + uci` 逻辑一致
+
+---
+
+## ✨ 核心能力
 
 - DHCP 开关管理（LAN）
 - 默认 DHCP 规则管理（Option 3 / Option 6）
 - 静态租约管理（新增、行内编辑、删除）
 - 标签模板管理（新增、行内编辑、删除）
 - 动态租约查看与转静态
-- 登录态控制（会话 Cookie + 本地会话文件）
+- 登录态控制（Cookie 会话 + 本地会话文件）
 
-## 3. 架构说明
+---
+
+## 🏗️ 架构概览
 
 ```text
 浏览器
-  -> Go HTTP 服务（:8088）
-     -> 静态资源（embed）
+  -> Go HTTP 服务（默认 :8088）
+     -> 内嵌前端静态资源（embed）
      -> API 路由（/cgi-bin/dhcp_adv_api）
         -> UCI 命令封装
-        -> dnsmasq 重启
+        -> dnsmasq 重启与状态同步
 ```
 
-说明：当前版本不再依赖 `uhttpd/cgi-bin` 托管页面。
+---
 
-## 4. 安装与部署
+## 🚀 快速开始
 
-### 4.1 一键部署（源码仓库方式）
+### 方式 A：源码仓库一键部署（推荐）
 
-适用场景：你已克隆本仓库，希望本地编译后直接部署到路由器。
+适用：你在本机有源码，希望本地编译后直接部署到路由器。
 
 前置条件：
 
-- 本机有 `go`、`sshpass`、`ssh`、`scp`、`curl`
-- 可通过 SSH 访问路由器（默认 `root@10.0.0.1`）
-- 脚本为交互式，会依次询问：路由器 IP、SSH 端口/账号/密码、面板端口、面板密码
+- 本机已安装 `go`、`sshpass`、`ssh`、`scp`、`curl`
+- 路由器可 SSH 登录（默认 `root@10.0.0.1:22`）
 
-执行命令：
+执行：
 
 ```sh
 ROUTER_PASS='你的SSH密码' ./scripts/deploy_oneclick.sh --host 10.0.0.1
 ```
 
-可选参数示例：
+脚本为交互式，会询问：
 
-```sh
-./scripts/deploy_oneclick.sh \
-  --host 10.0.0.1 \
-  --user root \
-  --port 22 \
-  --remote-dir /data/dhcp_adv \
-  --http-port 8088 \
-  --listen-addr 10.0.0.1:8088 \
-  --dashboard-password '你的管理页密码' \
-  --enable-cron
-```
+- 路由器 IP
+- SSH 端口、账号、密码
+- 面板端口
+- 面板密码
 
-### 4.2 手动下载安装部署（Release 包方式）
+---
 
-适用场景：只下载 CI/CD 产出的 Release 包，不拉源码，不想本地编译。
+## 🚢 安装与部署
 
-第一步：从 GitHub Release 下载以下两个文件：
+### 1) Release 包手动安装（不编译）
+
+适用：只下载 CI/CD 产物，不希望本地安装 Go。
+
+第一步：下载 Release 文件：
 
 - `xiaomi-dnsmasq-gui_<tag>_arm64.tar.gz`
 - `xiaomi-dnsmasq-gui_<tag>_arm64.tar.gz.sha256`
 
-第二步：校验完整性（推荐）：
+第二步：校验完整性：
 
 ```sh
 sha256sum -c xiaomi-dnsmasq-gui_<tag>_arm64.tar.gz.sha256
@@ -96,7 +102,7 @@ cd /tmp/dhcp_adv_release
 ls -1
 ```
 
-Release 包内容不只有一个二进制，默认包含：
+默认包含：
 
 - `dhcp_adv_api`
 - `deploy_oneclick.sh`
@@ -106,17 +112,17 @@ Release 包内容不只有一个二进制，默认包含：
 - `api_regression.sh`
 - `README.md`
 
-第四步（推荐）：在解压目录直接一键部署：
+第四步：在解压目录直接部署：
 
 ```sh
 ROUTER_PASS='你的SSH密码' ./deploy_oneclick.sh --host 10.0.0.1
 ```
 
-该脚本在 release 包中会自动优先使用同目录 `dhcp_adv_api`，无需本地 Go 编译环境。
+该脚本会优先使用同目录 `dhcp_adv_api`，无需本地 Go 编译环境。
 
-### 4.3 路由器在线一键安装（无需本地下载包）
+### 2) 路由器在线一键安装（curl | sh）
 
-如果你已经登录到路由器（`root`），可以直接在线安装：
+适用：你已进入路由器 shell，希望就地在线安装。
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/goodwe1l/xiaomi-ax6000-dnsmasq-ui/refs/heads/main/scripts/deploy_oneclick.sh | sh -s -- install
@@ -124,24 +130,29 @@ curl -fsSL https://raw.githubusercontent.com/goodwe1l/xiaomi-ax6000-dnsmasq-ui/r
 
 说明：
 
-- 这是“路由器本机安装”模式，会在线下载 GitHub Release 包并自动部署
-- 运行时会交互询问路由器 LAN IP、面板端口、面板密码
-- 默认监听地址是 `路由器IP:面板端口`（不是 `0.0.0.0`）
+- 自动下载对应 release 包并安装
+- 交互询问路由器 LAN IP、面板端口、面板密码
+- 默认监听 `路由器IP:面板端口`
 
-第五步（可选）：完全手工部署：
+### 3) 可选参数示例
 
 ```sh
-sshpass -p '你的SSH密码' scp -O -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null dhcp_adv_api root@10.0.0.1:/data/dhcp_adv/dhcp_adv_api
-sshpass -p '你的SSH密码' scp -O -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null dhcp_adv_start.sh root@10.0.0.1:/data/dhcp_adv/start.sh
-sshpass -p '你的SSH密码' scp -O -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null dhcp_adv_ensure.sh root@10.0.0.1:/data/dhcp_adv/ensure.sh
-sshpass -p '你的SSH密码' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@10.0.0.1 "chmod +x /data/dhcp_adv/dhcp_adv_api /data/dhcp_adv/start.sh /data/dhcp_adv/ensure.sh && APP_DIR=/data/dhcp_adv DHCP_ADV_LISTEN_ADDR=10.0.0.1:8088 /data/dhcp_adv/start.sh"
+./scripts/deploy_oneclick.sh \
+  --host 10.0.0.1 \
+  --user root \
+  --port 22 \
+  --remote-dir /data/dhcp_adv \
+  --http-port 8088 \
+  --listen-addr 10.0.0.1:8088 \
+  --dashboard-password '你的管理页密码' \
+  --enable-cron
 ```
 
-## 5. 一键卸载
+---
 
-### 5.1 本地远程卸载（推荐）
+## 🧹 一键卸载
 
-适用场景：在你的电脑上执行，通过 SSH 卸载路由器中的服务。
+### 方式 A：本地远程卸载（推荐）
 
 源码仓库执行：
 
@@ -155,15 +166,15 @@ Release 解压目录执行：
 ./uninstall_oneclick.sh --host 10.0.0.1
 ```
 
-说明：
+会执行：
 
-- 脚本会交互询问 SSH 端口、账号、密码（也支持参数传入）
-- 会执行停止进程、清理 cron 保活、删除安装目录（默认 `/data/dhcp_adv`）
-- 默认会二次确认，追加 `--yes` 可跳过确认
+- 停止进程
+- 清理 cron 保活项
+- 删除安装目录（默认 `/data/dhcp_adv`）
 
-### 5.2 路由器本机在线卸载
+默认会二次确认，追加 `--yes` 可跳过确认。
 
-适用场景：已登录路由器终端，直接执行在线脚本完成卸载。
+### 方式 B：路由器本机在线卸载
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/goodwe1l/xiaomi-ax6000-dnsmasq-ui/refs/heads/main/scripts/uninstall_oneclick.sh | sh -s -- local --yes
@@ -175,11 +186,13 @@ curl -fsSL https://raw.githubusercontent.com/goodwe1l/xiaomi-ax6000-dnsmasq-ui/r
 curl -fsSL https://raw.githubusercontent.com/goodwe1l/xiaomi-ax6000-dnsmasq-ui/refs/heads/main/scripts/uninstall_oneclick.sh | sh -s -- local --remote-dir /data/dhcp_adv --yes
 ```
 
-## 6. 运行配置
+---
+
+## ⚙️ 运行配置
 
 支持环境变量：
 
-- `DHCP_ADV_LISTEN_ADDR`：监听地址，程序默认 `0.0.0.0:8088`，脚本默认会写成 `路由器IP:面板端口`
+- `DHCP_ADV_LISTEN_ADDR`：监听地址，程序默认 `0.0.0.0:8088`
 - `DHCP_ADV_AUTH_FILE`：密码文件，默认 `/data/dhcp_adv/auth.conf`
 - `DHCP_ADV_SESSION_FILE`：会话文件，默认 `/tmp/dhcp_adv_session`
 - `DHCP_ADV_API_PATH`：API 路径，默认 `/cgi-bin/dhcp_adv_api`
@@ -190,7 +203,11 @@ curl -fsSL https://raw.githubusercontent.com/goodwe1l/xiaomi-ax6000-dnsmasq-ui/r
 password=你的管理页密码
 ```
 
-## 7. 访问与验收
+---
+
+## 🔍 访问与验收
+
+访问地址：
 
 - 页面：`http://<路由器IP>:8088/`
 - API：`http://<路由器IP>:8088/cgi-bin/dhcp_adv_api?action=auth_status`
@@ -202,18 +219,35 @@ curl -I http://10.0.0.1:8088/
 curl -I 'http://10.0.0.1:8088/cgi-bin/dhcp_adv_api?action=auth_status'
 ```
 
-## 8. 目录结构
+> [!TIP]
+> 如果你访问 `http://10.0.0.1:8080/` 看到的是小米原生后台，这是正常现象。
+> 本项目默认端口是 `8088`（或你部署时自定义的端口）。
+
+---
+
+## 📂 项目结构
 
 ```text
 .
 ├── cmd/dhcp_adv_api/              # Go 服务代码（含 web embed）
-├── pkg/utils/                     # 按类型拆分的公共辅助函数
-├── scripts/                       # 部署与运维脚本
-├── .github/workflows/             # CI/CD 工作流定义
+├── pkg/utils/                     # 公共辅助函数
+├── scripts/                       # 部署/卸载/运维脚本
+├── misc/                          # 回归测试脚本等辅助文件
+├── .github/workflows/             # CI/CD 工作流
 ├── go.mod
 └── README.md
 ```
 
-## 9. 文档约定
+---
 
-仓库仅保留 `README.md` 作为统一文档入口。
+## 🤝 反馈与改进
+
+如果你在使用中遇到部署、权限、UCI 兼容性问题，建议直接提 Issue 并附带：
+
+- 路由器型号与 OpenWrt 版本
+- 执行命令与完整错误日志
+- `curl -I` 验证结果
+
+---
+
+**仓库文档统一入口：`README.md`**
