@@ -423,8 +423,11 @@ deploy_mode() {
     require_cmd go
     log "1/7 本地编译 Go 程序（${TARGET_GOOS}/${TARGET_GOARCH}）"
     mkdir -p "$LOCAL_BUILD_DIR" "$GOCACHE_DIR"
-    GOOS="$TARGET_GOOS" GOARCH="$TARGET_GOARCH" CGO_ENABLED=0 GOCACHE="$GOCACHE_DIR" \
-      go build -o "$LOCAL_BIN" ./cmd/api
+    (
+      cd "$PROJECT_DIR"
+      GOOS="$TARGET_GOOS" GOARCH="$TARGET_GOARCH" CGO_ENABLED=0 GOCACHE="$GOCACHE_DIR" \
+        go build -o "$LOCAL_BIN" ./cmd/api
+    )
   elif [ "$BUILD_MODE" = "prebuilt" ]; then
     log "1/7 使用脚本同目录预编译二进制：$LOCAL_BIN"
   else
